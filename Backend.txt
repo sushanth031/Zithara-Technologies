@@ -1,0 +1,48 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Client } = require('pg');
+
+const app = express();
+const port = 3001;
+
+app.use(bodyParser.json());
+
+// PostgreSQL setup
+const client = new Client({
+  user: 'admin',
+  host: 'localhost',
+  database: 'Database',
+  password: zithara,
+  port: 5432,
+});
+
+client.connect();
+
+// API endpoint to get paginated, sorted, and searched data
+app.get('/api/data', async (req, res) => {
+  try {
+    const { page = 1, sort, search } = req.query;
+    const offset = (page - 1) * 20 || 0;
+    let query = 'SELECT * FROM customer_data';
+
+    if (search) {
+      query += ` WHERE customer_name ILIKE '%${search}%' OR location ILIKE '%${search}%'`;
+    }
+
+    if (sort) {
+      query += ` ORDER BY created_at.${sort}`;
+    }
+
+    query += ` LIMIT 20 OFFSET ${offset}`;
+
+    const result = await client.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
